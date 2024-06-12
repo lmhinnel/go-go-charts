@@ -9,6 +9,22 @@ data:
         Time_Format %Y-%m-%dT%H:%M:%S.%L
 
     [PARSER]
+        Name go_go_1
+        Format regex
+        Regex (?<date>[^ ]+)\s(?<time>[^ ]+)\s(?<msg>.*)
+        Time_Keep Off
+        Time_Key time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+
+    [PARSER]
+        Name go_go_2
+        Format regex
+        Regex \[(?<dur>[^ ]+)\] \[(?<rows>[^ ]+)\]\s(?<msg>.*)
+        Time_Keep Off
+        Time_Key time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+
+    [PARSER]
         Name go_go_3
         Format regex
         Regex (?<time>[^ ]+) \| (?<httpCode>[^ ]+) \|(\s)*(?<dur>[^ ]+) \| (?<ip>[^ ]+) \| (?<method>[^ ]+) \| (?<path>[^ ]+) \| (?<msg>.*)
@@ -19,7 +35,7 @@ data:
     [PARSER]
         Name go_go
         Format regex
-        Regex [^ ](?<msg>[^ ].*)
+        Regex [^ ](?<msg>(.)*)
         Time_Keep Off
         Time_Key time
         Time_Format %Y-%m-%dT%H:%M:%S.%L
@@ -34,6 +50,14 @@ data:
         HTTP_Listen 0.0.0.0
         HTTP_Port 2020
         Health_Check On
+
+    [INPUT]
+        Name tail
+        Path /var/log/containers/*go-go*.log
+        parser go_go_1, go_go_2, go_go_3, go_go
+        Tag go_go.*
+        Mem_Buf_Limit 5MB
+        Skip_Long_Lines On
 
     [INPUT]
         Name tail
@@ -62,8 +86,8 @@ data:
         Match kube.*
         Host 116.103.226.146
         Port 9200
-        HTTP_User {username}
-        HTTP_Passwd {password}
+        HTTP_User {{ user }}
+        HTTP_Passwd {{ password }}
         Index huonglm_0327182170
         Generate_ID On
         Suppress_Type_Name On
@@ -78,8 +102,8 @@ data:
         Match host.*
         Host 116.103.226.146
         Port 9200
-        HTTP_User elastic
-        HTTP_Passwd iRsUoyhqW-CyyGdwk6V_
+        HTTP_User {{ user }}
+        HTTP_Passwd {{ password }}
         Index huonglm_0327182170
         Suppress_Type_Name On
         tls On
@@ -90,11 +114,11 @@ data:
 
     [OUTPUT]
         Name es
-        Match go-go.*
+        Match go_go.*
         Host 116.103.226.146
         Port 9200
-        HTTP_User elastic
-        HTTP_Passwd iRsUoyhqW-CyyGdwk6V_
+        HTTP_User {{ user }}
+        HTTP_Passwd {{ password }}
         Index huonglm_0327182170
         Suppress_Type_Name On
         tls On
@@ -116,5 +140,5 @@ metadata:
     helm.sh/chart: fluent-bit-0.46.9
   name: fluent-bit
   namespace: go-go
-  resourceVersion: "315512"
+  resourceVersion: "319903"
   uid: 3ddefa2b-c3ba-45fc-9b75-de516389ae86
